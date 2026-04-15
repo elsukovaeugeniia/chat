@@ -1,4 +1,5 @@
-const createRequest = require('./createRequest');
+import createRequest from './createRequest'; // исправлено на ES6
+
 export default class Entity {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;

@@ -63,6 +63,16 @@ export default class Chat {
   }
 
   showNicknameModal() {
+    // Сначала создаём элементы DOM
+    this.bindToDOM();
+
+    // Проверяем, что модальное окно создано
+    if (!this.modal) {
+      console.error('Не удалось создать модальное окно: элемент modal не найден');
+      return;
+    }
+
+    // Теперь безопасно устанавливаем содержимое
     this.modal.innerHTML = `
       <div class="modal-content">
         <h2>ВЫБЕРИТЕ НИКНЕЙМ</h2>
@@ -77,7 +87,6 @@ export default class Chat {
     this.errorMessage = this.modal.querySelector('#error-message');
 
     this.continueButton.addEventListener('click', () => this.onEnterChatHandler());
-    this.bindToDOM();
   }
 
   async onEnterChatHandler() {
@@ -108,8 +117,12 @@ export default class Chat {
   }
 
   showError(message) {
-    this.errorMessage.textContent = message;
-    this.errorMessage.style.display = 'block';
+    if (this.errorMessage) {
+      this.errorMessage.textContent = message;
+      this.errorMessage.style.display = 'block';
+    } else {
+      console.warn('Элемент error-message не найден, не удалось показать ошибку:', message);
+    }
   }
 
   initChat() {
@@ -195,6 +208,11 @@ export default class Chat {
   }
 
   renderOnlineUsers(users) {
+    if (!this.usersList) {
+      console.warn('usersList не найден, не удалось отобразить список пользователей');
+      return;
+    }
+
     this.usersList.innerHTML = '';
 
     users.forEach(user => {
