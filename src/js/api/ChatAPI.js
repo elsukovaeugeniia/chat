@@ -2,7 +2,7 @@ import createRequest from './createRequest';
 
 export default class ChatAPI {
   constructor() {
-    this.baseUrl = 'http://localhost:3000'; // замените на порт вашего бэкенда
+    this.baseUrl = 'http://localhost:3001'; // замените на порт вашего бэкенда
   }
 
   async registerUser(name) {

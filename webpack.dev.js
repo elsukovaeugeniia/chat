@@ -10,7 +10,7 @@ module.exports = merge(common, {
     historyApiFallback: true,
     open: true,
     compress: true,
-    port: 3000,
+    port: 8080,
   },
 
   plugins: [

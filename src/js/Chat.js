@@ -1,5 +1,6 @@
 import ChatAPI from './api/ChatAPI';
 
+
 export default class Chat {
   constructor(container) {
     this.container = container;
@@ -23,16 +24,31 @@ export default class Chat {
   }
 
   registerEvents() {
+    // Обработчик нажатия Enter в поле ввода ника
     this.nicknameInput?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         this.onEnterChatHandler();
       }
     });
 
+    // Обработчик кнопки «Продолжить» в модальном окне
+    this.continueButton?.addEventListener('click', () => {
+      this.onEnterChatHandler();
+    });
+
+    // Обработчик отправки сообщения
     this.sendButton?.addEventListener('click', () => {
       this.sendMessage();
     });
 
+    // Обработчик нажатия Enter в поле ввода сообщения
+    this.messageInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.sendMessage();
+      }
+    });
+
+    // Обработка закрытия страницы
     window.addEventListener('beforeunload', () => {
       this.handleUserExit();
     });
@@ -54,11 +70,11 @@ export default class Chat {
     };
 
     this.websocket.onclose = () => {
-      // Логирование отключено в продакшене
-      // Для разработки можно раскомментировать:
-      // if (process.env.NODE_ENV === 'development') {
-      //   console.log('WebSocket connection closed');
-      // }
+      console.log('WebSocket connection closed');
+    };
+
+    this.websocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
     };
   }
 
@@ -86,7 +102,8 @@ export default class Chat {
     this.continueButton = this.modal.querySelector('#continue-btn');
     this.errorMessage = this.modal.querySelector('#error-message');
 
-    this.continueButton.addEventListener('click', () => this.onEnterChatHandler());
+    // Фокусируем поле ввода ника
+    setTimeout(() => this.nicknameInput.focus(), 100);
   }
 
   async onEnterChatHandler() {
@@ -113,7 +130,9 @@ export default class Chat {
   }
 
   hideModal() {
-    this.modal.style.display = 'none';
+    if (this.modal) {
+      this.modal.style.display = 'none';
+    }
   }
 
   showError(message) {
@@ -146,6 +165,7 @@ export default class Chat {
     this.messageInput = this.chatContainer.querySelector('#message-input');
     this.sendButton = this.chatContainer.querySelector('#send-button');
     this.usersList = this.chatContainer.querySelector('#users-list');
+
 
     this.registerEvents();
     this.connectWebSocket();
@@ -180,6 +200,8 @@ export default class Chat {
       }));
 
       this.messageInput.value = '';
+    } else {
+      this.showError('Соединение с сервером потеряно');
     }
   }
 
@@ -223,3 +245,4 @@ export default class Chat {
     });
   }
 }
+

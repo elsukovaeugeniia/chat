@@ -1,42 +1,32 @@
-module.exports = [
+//проверка
+// eslint.config.js
+export default [
   {
-    files: ['src/**/*.js'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module'
-    },
-    rules: {
-      'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
-      'semi': ['error', 'always'],
-      'quotes': ['error', 'single'],
-      'indent': ['error', 2],
-      'no-unused-vars': 'error',
-      'eqeqeq': ['error', 'always']
-    }
-  },
-  {
-    // Правила для серверного кода и конфигураций (CommonJS)
-    files: ['server/**/*.js', 'webpack.*.js'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'commonjs'
-    },
-    rules: {
-      'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
-      'semi': ['error', 'always'],
-      'quotes': ['error', 'single'],
-      'indent': ['error', 2],
-      'no-unused-vars': 'warn'
-    }
-  },
-  {
-    // Игнорирование определённых файлов и папок
+    files: ['src/**/*.js', '*.js'], // обрабатываем JS-файлы в src и корне
     ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      '*.min.js'
-    ]
+      'webpack.common.js',
+      'webpack.dev.js',
+      'webpack.prod.js',
+      'dist/',
+      'node_modules/'
+    ],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module' // для файлов с import/export
+    },
+    rules: {}
+  },
+  {
+    files: [
+      'webpack.common.js',
+      'webpack.dev.js',
+      'webpack.prod.js'
+    ],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs' // для Webpack-конфигов с require/module
+    }
   }
 ];
+
 
