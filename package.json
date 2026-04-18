@@ -7,6 +7,7 @@
     "start": "webpack serve --config webpack.dev.js",
     "build": "webpack --config webpack.prod.js",
     "lint": "eslint ./src",
+    "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
     "test": "jest",
     "coverage": "jest --coverage",
     "ci": "start-test :8080 test"
