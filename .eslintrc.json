@@ -12,5 +12,14 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
+  "overrides": [
+    {
+      "files": ["webpack.*.js"],
+      "rules": {
+        "no-undef": "off",
+        "import/no-unresolved": "off"
+      }
+    }
+  ],
   "rules": {}
 }
