@@ -1,17 +1,16 @@
 import { randomUUID } from "node:crypto";
 import http from "node:http";
-import bodyParser from "body-parser";
 import cors from "cors";
 import express from "express";
 import pino from "pino";
 import pinoPretty from "pino-pretty";
-import WebSocket, { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws"; // Исправлено: WebSocket → WebSocket
 
 const app = express();
 const logger = pino(pinoPretty());
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // Исправлено: используем встроенную функцию Express
 app.use((req, res, next) => {
   res.setHeader("Content-Type", "application/json");
   next();
@@ -29,7 +28,7 @@ app.post("/new-user", async (request, response) => {
       status: "error",
       message: "Никнейм не может быть пустым",
     };
-    response.status(400).send(result).end();
+    response.status(400).send(result); // Исправлено: убран .end()
     return;
   }
 
@@ -40,7 +39,7 @@ app.post("/new-user", async (request, response) => {
       message: "Этот никнейм уже занят!",
     };
     logger.error(`Пользователь с ником "${name}" уже существует`);
-    response.status(409).send(result).end();
+    response.status(409).send(result); // Исправлено: убран .end()
   } else {
     const newUser = {
       id: randomUUID(),
@@ -52,7 +51,7 @@ app.post("/new-user", async (request, response) => {
       user: newUser,
     };
     logger.info(`Новый пользователь создан: ${JSON.stringify(newUser)}`);
-    response.send(result).end();
+    response.send(result); // Исправлено: убран .end()
   }
 });
 
@@ -60,6 +59,16 @@ const server = http.createServer(app);
 const wsServer = new WebSocketServer({ server });
 
 wsServer.on("connection", (ws) => {
+  // Обработчик ошибок WebSocket
+  ws.on("error", (error) => {
+    logger.error(`WebSocket error: ${error.message}`);
+  });
+
+  // Обработчик закрытия соединения
+  ws.on("close", () => {
+    logger.info("WebSocket соединение закрыто");
+  });
+
   // Отправляем актуальный список пользователей новому клиенту
   ws.send(JSON.stringify(userState));
 
@@ -76,7 +85,11 @@ wsServer.on("connection", (ws) => {
           // Отправляем обновлённый список всем клиентам
           [...wsServer.clients]
             .filter((o) => o.readyState === WebSocket.OPEN)
-            .forEach((o) => o.send(JSON.stringify(userState)));
+            .forEach((o) => {
+              if (o.readyState === WebSocket.OPEN) {
+                o.send(JSON.stringify(userState));
+              }
+            });
           logger.info(`Пользователь "${receivedMSG.user.name}" вышел`);
         }
         return;
@@ -86,7 +99,11 @@ wsServer.on("connection", (ws) => {
       if (receivedMSG.type === "send") {
         [...wsServer.clients]
           .filter((o) => o.readyState === WebSocket.OPEN)
-          .forEach((o) => o.send(msg, { binary: isBinary }));
+          .forEach((o) => {
+            if (o.readyState === WebSocket.OPEN) {
+              o.send(msg, { binary: isBinary });
+            }
+          });
         logger.info("Сообщение отправлено всем пользователям");
       }
     } catch (error) {
@@ -108,3 +125,4 @@ const bootstrap = async () => {
 };
 
 bootstrap();
+

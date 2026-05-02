@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "homeworks",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "webpack serve --config webpack.dev.js",
     "build": "webpack --config webpack.prod.js",
@@ -46,6 +45,7 @@
   },
   "dependencies": {
     "core-js": "3.29.1",
+    "cors": "^2.8.6",
     "express": "^5.2.1",
     "ws": "^8.20.0"
   }
