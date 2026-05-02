@@ -11,6 +11,7 @@ export default class Chat {
 
   init() {
     this.showNicknameModal();
+    this.registerEvents();
   }
 
   bindToDOM() {

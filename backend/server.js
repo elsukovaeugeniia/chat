@@ -11,30 +11,37 @@ const app = express();
 const logger = pino(pinoPretty());
 
 app.use(cors());
-app.use(
-  bodyParser.json({
-    type(req) {
-      return true;
-    },
-  })
-);
+app.use(bodyParser.json());
 app.use((req, res, next) => {
   res.setHeader("Content-Type", "application/json");
   next();
 });
 
 const userState = [];
+
+// Эндпоинт для регистрации пользователя
 app.post("/new-user", async (request, response) => {
-  if (Object.keys(request.body).length === 0) {
+  const { name } = request.body;
+
+  // Проверка, что имя передано и не пустое
+  if (!name || typeof name !== 'string' || name.trim() === '') {
     const result = {
       status: "error",
-      message: "This name is already taken!",
+      message: "Никнейм не может быть пустым",
     };
-    response.status(400).send(JSON.stringify(result)).end();
+    response.status(400).send(result).end();
+    return;
   }
-  const { name } = request.body;
+
   const isExist = userState.find((user) => user.name === name);
-  if (!isExist) {
+  if (isExist) {
+    const result = {
+      status: "error",
+      message: "Этот никнейм уже занят!",
+    };
+    logger.error(`Пользователь с ником "${name}" уже существует`);
+    response.status(409).send(result).end();
+  } else {
     const newUser = {
       id: randomUUID(),
       name: name,
@@ -44,47 +51,48 @@ app.post("/new-user", async (request, response) => {
       status: "ok",
       user: newUser,
     };
-    logger.info(`New user created: ${JSON.stringify(newUser)}`);
-    response.send(JSON.stringify(result)).end();
-  } else {
-    const result = {
-      status: "error",
-      message: "This name is already taken!",
-    };
-    logger.error(`User with name "${name}" already exist`);
-    response.status(409).send(JSON.stringify(result)).end();
+    logger.info(`Новый пользователь создан: ${JSON.stringify(newUser)}`);
+    response.send(result).end();
   }
 });
 
 const server = http.createServer(app);
 const wsServer = new WebSocketServer({ server });
+
 wsServer.on("connection", (ws) => {
+  // Отправляем актуальный список пользователей новому клиенту
+  ws.send(JSON.stringify(userState));
+
   ws.on("message", (msg, isBinary) => {
-    const receivedMSG = JSON.parse(msg);
-    logger.info(`Message received: ${JSON.stringify(receivedMSG)}`);
-    // обработка выхода пользователя
-    if (receivedMSG.type === "exit") {
-      const idx = userState.findIndex(
-        (user) => user.name === receivedMSG.user.name
-      );
-      userState.splice(idx, 1);
-      [...wsServer.clients]
-        .filter((o) => o.readyState === WebSocket.OPEN)
-        .forEach((o) => o.send(JSON.stringify(userState)));
-      logger.info(`User with name "${receivedMSG.user.name}" has been deleted`);
-      return;
-    }
-    // обработка отправки сообщения
-    if (receivedMSG.type === "send") {
-      [...wsServer.clients]
-        .filter((o) => o.readyState === WebSocket.OPEN)
-        .forEach((o) => o.send(msg, { binary: isBinary }));
-      logger.info("Message sent to all users");
+    try {
+      const receivedMSG = JSON.parse(msg);
+      logger.info(`Сообщение получено: ${JSON.stringify(receivedMSG)}`);
+
+      // Обработка выхода пользователя
+      if (receivedMSG.type === "exit") {
+        const idx = userState.findIndex((user) => user.name === receivedMSG.user.name);
+        if (idx !== -1) {
+          userState.splice(idx, 1);
+          // Отправляем обновлённый список всем клиентам
+          [...wsServer.clients]
+            .filter((o) => o.readyState === WebSocket.OPEN)
+            .forEach((o) => o.send(JSON.stringify(userState)));
+          logger.info(`Пользователь "${receivedMSG.user.name}" вышел`);
+        }
+        return;
+      }
+
+      // Обработка отправки сообщения
+      if (receivedMSG.type === "send") {
+        [...wsServer.clients]
+          .filter((o) => o.readyState === WebSocket.OPEN)
+          .forEach((o) => o.send(msg, { binary: isBinary }));
+        logger.info("Сообщение отправлено всем пользователям");
+      }
+    } catch (error) {
+      logger.error(`Ошибка парсинга JSON: ${error.message}`);
     }
   });
-  [...wsServer.clients]
-    .filter((o) => o.readyState === WebSocket.OPEN)
-    .forEach((o) => o.send(JSON.stringify(userState)));
 });
 
 const port = process.env.PORT || 3000;
@@ -92,10 +100,10 @@ const port = process.env.PORT || 3000;
 const bootstrap = async () => {
   try {
     server.listen(port, () =>
-      logger.info(`Server has been started on http://localhost:${port}`)
+      logger.info(`Сервер запущен на http://localhost:${port}`)
     );
   } catch (error) {
-    logger.error(`Error: ${error.message}`);
+    logger.error(`Ошибка: ${error.message}`);
   }
 };
 
